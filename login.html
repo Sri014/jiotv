@@ -1,0 +1,472 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0, viewport-fit=cover">
+    <title>Login · JioTV Connect</title>
+    <link rel="icon" href="https://pub-d9e70e5abf3a43bcadb504fbe8d10dfa.r2.dev/jtv.png" type="image/png">
+    <link href="https://fonts.googleapis.com/css2?family=Manrope:wght@400;500;600;700;800&family=JetBrains+Mono:wght@400;500;600;700&display=swap" rel="stylesheet">
+    <style>
+        :root {
+            --bg: #050706;
+            --surface: #0a0f0c;
+            --surface-elevated: #0d1310;
+            --border-soft: rgba(255, 255, 255, 0.06);
+            --accent: #39ff88;
+            --accent-dim: rgba(57, 255, 136, 0.2);
+            --text: #eef7f1;
+            --text-muted: #7c8c81;
+            --radius-lg: 18px;
+            --radius-sm: 8px;
+            --font-body: 'Manrope', sans-serif;
+            --font-mono: 'JetBrains Mono', monospace;
+        }
+
+        * { box-sizing: border-box; margin: 0; padding: 0; }
+
+        body {
+            background-color: var(--bg);
+            color: var(--text);
+            font-family: var(--font-body);
+            min-height: 100vh;
+            min-height: 100dvh;
+            display: flex;
+            flex-direction: column;
+            position: relative;
+            overflow-x: hidden;
+            overscroll-behavior-y: auto; /* Enables pull-to-refresh on mobile */
+        }
+
+        /* Ambient orbs */
+        body::before {
+            content: "";
+            position: fixed;
+            top: -20%; left: -10%; width: 70vw; height: 70vw; border-radius: 50%;
+            background: radial-gradient(circle, rgba(57, 255, 136, 0.08) 0%, transparent 60%);
+            animation: float 20s ease-in-out infinite alternate; z-index: 0;
+        }
+        body::after {
+            content: "";
+            position: fixed;
+            bottom: -20%; right: -10%; width: 60vw; height: 60vw; border-radius: 50%;
+            background: radial-gradient(circle, rgba(232, 176, 75, 0.04) 0%, transparent 60%);
+            animation: float 15s ease-in-out infinite alternate-reverse; z-index: 0;
+        }
+        @keyframes float {
+            0% { transform: translate(0, 0) scale(1); }
+            100% { transform: translate(5%, 10%) scale(1.1); }
+        }
+
+        .bg-grid::after {
+            content: ""; position: fixed; inset: 0; opacity: 0.02;
+            background-image: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='120' height='120'%3E%3Cfilter id='n'%3E%3CfeTurbulence type='fractalNoise' baseFrequency='0.9' numOctaves='2' stitchTiles='stitch'/%3E%3C/filter%3E%3Crect width='100%25' height='100%25' filter='url(%23n)'/%3E%3C/svg%3E");
+            z-index: 0; pointer-events: none;
+        }
+
+        main {
+            flex: 1 1 auto;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            padding: 18px 36px;
+            position: relative;
+            z-index: 1;
+            width: 100%;
+        }
+
+        .dashboard {
+            width: 100%;
+            max-width: 390px;
+            display: flex;
+            flex-direction: column;
+            gap: 12px;
+            animation: rise 0.5s cubic-bezier(0.16, 1, 0.3, 1) both;
+            position: relative;
+        }
+
+        .dashboard::before,
+        .dashboard::after {
+            content: "";
+            position: absolute;
+            top: -14px;
+            bottom: -14px;
+            width: 1px;
+            background: repeating-linear-gradient(180deg, rgba(57, 255, 136, 0.35) 0 2px, transparent 2px 8px);
+            opacity: 0.5;
+            pointer-events: none;
+        }
+        .dashboard::before { left: -18px; }
+        .dashboard::after { right: -18px; }
+
+        .card {
+            position: relative;
+            background: linear-gradient(155deg, var(--surface-elevated), var(--surface) 60%);
+            border: 1px solid var(--border-soft);
+            border-radius: var(--radius-lg);
+            box-shadow: 0 18px 40px -18px rgba(0, 0, 0, 0.8), 0 2px 6px rgba(0, 0, 0, 0.5);
+            overflow: hidden;
+            transition: transform 0.3s cubic-bezier(0.16, 1, 0.3, 1), box-shadow 0.3s cubic-bezier(0.16, 1, 0.3, 1);
+        }
+
+        .card::before {
+            content: ""; position: absolute; inset: 0; border-radius: inherit; padding: 1px;
+            background: linear-gradient(180deg, rgba(57, 255, 136, 0.14), transparent 45%);
+            -webkit-mask: linear-gradient(#000 0 0) content-box, linear-gradient(#000 0 0);
+            mask: linear-gradient(#000 0 0) content-box, linear-gradient(#000 0 0);
+            -webkit-mask-composite: xor; mask-composite: exclude; pointer-events: none;
+        }
+
+        .header-card { padding: 24px 18px 18px; }
+        .body-card { padding: 24px 18px; }
+
+        .glow-orb {
+            position: absolute;
+            top: -50px;
+            right: -30px;
+            width: 160px;
+            height: 160px;
+            background: radial-gradient(circle, rgba(57, 255, 136, 0.12), transparent 70%);
+            pointer-events: none;
+        }
+        
+        .bracket {
+            position: absolute;
+            width: 14px;
+            height: 14px;
+            pointer-events: none;
+            opacity: 0.6;
+            z-index: 2;
+        }
+        .bracket svg { width: 100%; height: 100%; display: block; }
+        .bracket.tl { top: 8px; left: 8px; }
+        .bracket.tr { top: 8px; right: 8px; transform: scaleX(-1); }
+        .bracket.bl { bottom: 8px; left: 8px; transform: scaleY(-1); }
+        .bracket.br { bottom: 8px; right: 8px; transform: scale(-1, -1); }
+        
+        .eyebrow {
+            display: flex;
+            align-items: center;
+            gap: 6px;
+            font-size: 10.5px;
+            font-weight: 700;
+            letter-spacing: 0.12em;
+            text-transform: uppercase;
+            color: var(--accent);
+            margin-bottom: 24px;
+        }
+        .eyebrow .spark { font-size: 11px; line-height: 1; }
+
+        .logo-box { margin-bottom: 12px; }
+        .logo-box img { width: 44px; height: 44px; border-radius: 12px; }
+
+        h1 { font-size: 22px; font-weight: 800; margin-bottom: 6px; letter-spacing: -0.02em; }
+        p { font-size: 13px; color: var(--text-muted); margin-bottom: 24px; }
+
+        .input-group { margin-bottom: 16px; position: relative; }
+        .input-group label { display: block; font-size: 10px; font-weight: 700; text-transform: uppercase; letter-spacing: 0.1em; color: var(--text-muted); margin-bottom: 6px; }
+        
+        input {
+            width: 100%;
+            background: rgba(0, 0, 0, 0.3);
+            border: 1px solid var(--border-soft);
+            border-radius: var(--radius-sm);
+            padding: 12px 14px;
+            color: var(--text);
+            font-family: var(--font-mono);
+            font-size: 14px;
+            outline: none;
+            transition: border-color 0.2s, box-shadow 0.2s;
+        }
+        input:focus {
+            border-color: var(--accent);
+            box-shadow: 0 0 0 3px var(--accent-dim);
+        }
+
+        button {
+            width: 100%;
+            background: var(--text);
+            color: var(--bg);
+            border: none;
+            border-radius: var(--radius-sm);
+            padding: 12px;
+            font-family: var(--font-body);
+            font-weight: 700;
+            font-size: 14px;
+            cursor: pointer;
+            transition: transform 0.1s, opacity 0.2s;
+            margin-top: 10px;
+        }
+        button:active { transform: scale(0.97); }
+        button:disabled { opacity: 0.5; cursor: not-allowed; }
+        
+        .error-msg { color: #ff5c66; font-size: 12px; margin-top: 10px; text-align: center; display: none; }
+
+        /* Modal Overlay */
+        .modal-overlay {
+            position: fixed;
+            inset: 0;
+            background: rgba(5, 7, 6, 0.85);
+            backdrop-filter: blur(8px);
+            -webkit-backdrop-filter: blur(8px);
+            display: flex;
+            flex-direction: column;
+            align-items: center;
+            justify-content: center;
+            z-index: 9999;
+            opacity: 0;
+            pointer-events: none;
+            transition: opacity 0.3s;
+        }
+        .modal-overlay.active {
+            opacity: 1;
+            pointer-events: all;
+        }
+        .spinner {
+            width: 48px;
+            height: 48px;
+            border: 3px solid var(--border-soft);
+            border-top-color: var(--accent);
+            border-radius: 50%;
+            animation: spin 1s linear infinite;
+            margin-bottom: 16px;
+        }
+        @keyframes spin { 100% { transform: rotate(360deg); } }
+        
+        .modal-text {
+            font-size: 14px;
+            font-weight: 600;
+            color: var(--text);
+            letter-spacing: 0.05em;
+        }
+
+        /* OTP Inputs */
+        .otp-container {
+            display: flex;
+            gap: 6px;
+            justify-content: space-between;
+        }
+        .otp-box {
+            flex: 1 1 0;
+            width: 0;
+            height: 50px;
+            text-align: center;
+            font-size: 20px;
+            font-weight: 700;
+            padding: 0;
+        }
+        .otp-box::-webkit-outer-spin-button,
+        .otp-box::-webkit-inner-spin-button {
+            -webkit-appearance: none;
+            margin: 0;
+        }
+
+        footer {
+            padding: 24px 0;
+            text-align: center;
+            position: relative;
+            z-index: 1;
+            margin-top: auto;
+        }
+
+        footer p {
+            font-size: 11px;
+            color: var(--text-muted);
+            font-weight: 600;
+            letter-spacing: 0.05em;
+            margin: 0;
+        }
+
+        footer .heart { font-size: 12px; }
+        footer .brand { color: var(--text); font-weight: 800; }
+    </style>
+</head>
+<body>
+    <div class="modal-overlay" id="loading-modal">
+        <div class="spinner"></div>
+        <div class="modal-text" id="loading-text">Processing...</div>
+    </div>
+
+    <div class="bg-grid"></div>
+
+    <main>
+        <div class="dashboard">
+            <!-- HEADER CARD -->
+            <section class="card header-card">
+                <div class="glow-orb"></div>
+                <div class="bracket tl"><svg viewBox="0 0 14 14" fill="none"><path d="M1 6V1H6" stroke="#39ff88" stroke-width="1.3" stroke-linecap="round" /></svg></div>
+                <div class="bracket tr"><svg viewBox="0 0 14 14" fill="none"><path d="M1 6V1H6" stroke="#39ff88" stroke-width="1.3" stroke-linecap="round" /></svg></div>
+                <div class="bracket bl"><svg viewBox="0 0 14 14" fill="none"><path d="M1 6V1H6" stroke="#39ff88" stroke-width="1.3" stroke-linecap="round" /></svg></div>
+                <div class="bracket br"><svg viewBox="0 0 14 14" fill="none"><path d="M1 6V1H6" stroke="#39ff88" stroke-width="1.3" stroke-linecap="round" /></svg></div>
+
+                <div class="eyebrow"><span class="spark">✦</span> JIOTV LOGIN</div>
+
+                <div style="display: flex; align-items: center; gap: 14px;">
+                    <div class="logo-box" style="margin-bottom: 0;">
+                        <img src="https://pub-d9e70e5abf3a43bcadb504fbe8d10dfa.r2.dev/jtv.png" alt="JioTV Logo">
+                    </div>
+                    <div>
+                        <div style="font-size: 18px; font-weight: 800; color: var(--text); margin-bottom: 2px;">JioTV Login</div>
+                        <div style="font-size: 13px; color: var(--text-muted);">IPTV Playlist Portal</div>
+                    </div>
+                </div>
+            </section>
+
+            <!-- BODY CARD -->
+            <section class="card body-card">
+                <h1>Authenticate</h1>
+                <p>Login with your Jio mobile number to generate a secure session.</p>
+
+                <div id="step-1">
+                    <div class="input-group">
+                        <label>Mobile Number</label>
+                        <input type="tel" id="mobile" placeholder="e.g. 9876543210" maxlength="10">
+                    </div>
+                    <button id="btn-send">Request OTP</button>
+                </div>
+
+                <div id="step-2" style="display: none;">
+                    <div class="input-group">
+                        <label>One Time Password</label>
+                        <div class="otp-container" id="otp-inputs">
+                            <input type="text" class="otp-box" maxlength="1" inputmode="numeric" pattern="[0-9]*">
+                            <input type="text" class="otp-box" maxlength="1" inputmode="numeric" pattern="[0-9]*">
+                            <input type="text" class="otp-box" maxlength="1" inputmode="numeric" pattern="[0-9]*">
+                            <input type="text" class="otp-box" maxlength="1" inputmode="numeric" pattern="[0-9]*">
+                            <input type="text" class="otp-box" maxlength="1" inputmode="numeric" pattern="[0-9]*">
+                            <input type="text" class="otp-box" maxlength="1" inputmode="numeric" pattern="[0-9]*">
+                        </div>
+                    </div>
+                    <button id="btn-verify">Verify & Login</button>
+                </div>
+
+                <div class="error-msg" id="error"></div>
+            </section>
+        </div>
+    </main>
+
+    <footer>
+        <p>Crafted With <span class="heart">💚</span> by <span class="brand">LazyyXD</span></p>
+    </footer>
+
+    <script>
+        // Check if already logged in
+        fetch('api/auth?action=status').then(r => r.json()).then(data => {
+            if (data.status === 'logged_in') {
+                window.location.href = './';
+            }
+        });
+
+        const mobileInput = document.getElementById('mobile');
+        const btnSend = document.getElementById('btn-send');
+        const btnVerify = document.getElementById('btn-verify');
+        const step1 = document.getElementById('step-1');
+        const step2 = document.getElementById('step-2');
+        const errorEl = document.getElementById('error');
+
+        // OTP Input Logic
+        const otpInputs = Array.from(document.querySelectorAll('.otp-box'));
+        
+        otpInputs.forEach((input, index) => {
+            input.addEventListener('input', (e) => {
+                input.value = input.value.replace(/[^0-9]/g, ''); // Ensure numeric
+                if (input.value && index < otpInputs.length - 1) {
+                    otpInputs[index + 1].focus();
+                }
+            });
+            input.addEventListener('keydown', (e) => {
+                if (e.key === 'Backspace' && !input.value && index > 0) {
+                    otpInputs[index - 1].focus();
+                }
+            });
+            input.addEventListener('paste', (e) => {
+                e.preventDefault();
+                const pastedData = (e.clipboardData || window.clipboardData).getData('text').replace(/[^0-9]/g, '').slice(0, 6);
+                for (let i = 0; i < pastedData.length; i++) {
+                    otpInputs[i].value = pastedData[i];
+                }
+                if (pastedData.length > 0) {
+                    const focusIndex = Math.min(pastedData.length, 5);
+                    otpInputs[focusIndex].focus();
+                }
+            });
+        });
+
+        function getOtpValue() {
+            return otpInputs.map(input => input.value).join('');
+        }
+
+        function showLoader(msg) {
+            document.getElementById('loading-text').textContent = msg;
+            document.getElementById('loading-modal').classList.add('active');
+        }
+
+        function hideLoader() {
+            document.getElementById('loading-modal').classList.remove('active');
+        }
+
+        function showError(msg) {
+            errorEl.textContent = msg;
+            errorEl.style.display = 'block';
+            hideLoader();
+        }
+
+        btnSend.addEventListener('click', async () => {
+            const number = mobileInput.value.trim();
+            if (number.length !== 10) return showError('Enter a valid 10-digit number');
+            
+            errorEl.style.display = 'none';
+            showLoader('Requesting OTP...');
+            btnSend.disabled = true;
+
+            try {
+                const res = await fetch('api/auth?action=send_otp', {
+                    method: 'POST',
+                    headers: { 'Content-Type': 'application/json' },
+                    body: JSON.stringify({ identifier: number })
+                });
+                const data = await res.json();
+                
+                if (res.ok) {
+                    step1.style.display = 'none';
+                    step2.style.display = 'block';
+                    hideLoader();
+                    setTimeout(() => otpInputs[0].focus(), 100);
+                } else {
+                    throw new Error(data.error || 'Failed to send OTP');
+                }
+            } catch (err) {
+                showError(err.message);
+                btnSend.disabled = false;
+            }
+        });
+
+        btnVerify.addEventListener('click', async () => {
+            const number = mobileInput.value.trim();
+            const otp = getOtpValue();
+            if (otp.length !== 6) return showError('Enter a valid 6-digit OTP');
+            
+            errorEl.style.display = 'none';
+            showLoader('Verifying session...');
+            btnVerify.disabled = true;
+
+            try {
+                const res = await fetch('api/auth?action=verify_otp', {
+                    method: 'POST',
+                    headers: { 'Content-Type': 'application/json' },
+                    body: JSON.stringify({ identifier: number, otp: otp })
+                });
+                const data = await res.json();
+                
+                if (res.ok && data.api_key) {
+                    window.location.href = './';
+                } else {
+                    throw new Error(data.error || 'Invalid OTP');
+                }
+            } catch (err) {
+                showError(err.message);
+                btnVerify.disabled = false;
+            }
+        });
+    </script>
+</body>
+</html>

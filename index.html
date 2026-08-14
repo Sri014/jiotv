@@ -1,0 +1,882 @@
+<!DOCTYPE html>
+<html lang="en">
+
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0, viewport-fit=cover">
+    <title>JioTV Connect</title>
+    <link rel="icon" href="https://pub-d9e70e5abf3a43bcadb504fbe8d10dfa.r2.dev/jtv.png" type="image/png">
+    <link rel="preconnect" href="https://fonts.googleapis.com">
+    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+    <link
+        href="https://fonts.googleapis.com/css2?family=Manrope:wght@400;500;600;700;800&family=JetBrains+Mono:wght@400;500;600;700&display=swap"
+        rel="stylesheet">
+    <style>
+        :root {
+            --bg: #050706;
+            --surface: #0a0f0c;
+            --surface-elevated: #0d1310;
+            --surface-inset: #070a08;
+            --border: rgba(57, 255, 136, 0.14);
+            --border-soft: rgba(255, 255, 255, 0.06);
+            --accent: #39ff88;
+            --accent-dim: #1f8a4d;
+            --accent-soft: rgba(57, 255, 136, 0.09);
+            --text: #eef7f1;
+            --text-muted: #7c8c81;
+            --text-faint: #465049;
+            --amber: #e8b04b;
+            --red: #ff5c66;
+            --radius-lg: 18px;
+            --radius-md: 12px;
+            --radius-sm: 8px;
+            --radius-pill: 999px;
+            --shadow-card: 0 18px 40px -18px rgba(0, 0, 0, 0.8), 0 2px 6px rgba(0, 0, 0, 0.5);
+            --font-body: 'Manrope', -apple-system, BlinkMacSystemFont, sans-serif;
+            --font-mono: 'JetBrains Mono', ui-monospace, SFMono-Regular, monospace;
+            --gap: 12px;
+        }
+
+        * {
+            box-sizing: border-box;
+            margin: 0;
+            padding: 0;
+        }
+
+        html,
+        body {
+            height: 100%;
+            overflow-x: hidden;
+        }
+
+        body {
+            background-color: var(--bg);
+            color: var(--text);
+            font-family: var(--font-body);
+            min-height: 100vh;
+            min-height: 100dvh;
+            display: flex;
+            flex-direction: column;
+            position: relative;
+            overflow-x: hidden;
+        }
+
+        /* Ambient background orbs */
+        body::before {
+            content: "";
+            position: fixed;
+            top: -20%;
+            left: -10%;
+            width: 70vw;
+            height: 70vw;
+            border-radius: 50%;
+            background: radial-gradient(circle, rgba(57, 255, 136, 0.08) 0%, transparent 60%);
+            animation: float 20s ease-in-out infinite alternate;
+            z-index: 0;
+            pointer-events: none;
+        }
+
+        body::after {
+            content: "";
+            position: fixed;
+            bottom: -20%;
+            right: -10%;
+            width: 60vw;
+            height: 60vw;
+            border-radius: 50%;
+            background: radial-gradient(circle, rgba(232, 176, 75, 0.04) 0%, transparent 60%);
+            animation: float 15s ease-in-out infinite alternate-reverse;
+            z-index: 0;
+            pointer-events: none;
+        }
+
+        @keyframes float {
+            0% { transform: translate(0, 0) scale(1); }
+            100% { transform: translate(5%, 10%) scale(1.1); }
+        }
+
+        /* architectural blueprint grid overlay (moved to a new wrapper) */
+        .bg-grid {
+            position: fixed;
+            inset: 0;
+            background-image:
+                linear-gradient(rgba(57, 255, 136, 0.045) 1px, transparent 1px),
+                linear-gradient(90deg, rgba(57, 255, 136, 0.045) 1px, transparent 1px);
+            background-size: 24px 24px;
+            -webkit-mask-image: radial-gradient(ellipse 55% 45% at 50% 22%, black, transparent 78%);
+            mask-image: radial-gradient(ellipse 55% 45% at 50% 22%, black, transparent 78%);
+            pointer-events: none;
+            z-index: 0;
+        }
+
+        .bg-grid::after {
+            content: "";
+            position: fixed;
+            inset: 0;
+            opacity: 0.02;
+            pointer-events: none;
+            z-index: 0;
+            background-image: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='120' height='120'%3E%3Cfilter id='n'%3E%3CfeTurbulence type='fractalNoise' baseFrequency='0.9' numOctaves='2' stitchTiles='stitch'/%3E%3C/filter%3E%3Crect width='100%25' height='100%25' filter='url(%23n)'/%3E%3C/svg%3E");
+        }
+
+        main {
+            flex: 1 1 auto;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            padding: 18px 36px;
+            position: relative;
+            z-index: 1;
+            width: 100%;
+        }
+
+        .dashboard {
+            width: 100%;
+            max-width: 390px;
+            display: flex;
+            flex-direction: column;
+            gap: var(--gap);
+            animation: rise 0.5s cubic-bezier(0.16, 1, 0.3, 1) both;
+            position: relative;
+        }
+
+        @keyframes rise {
+            from {
+                opacity: 0;
+                transform: translateY(8px);
+            }
+
+            to {
+                opacity: 1;
+                transform: translateY(0);
+            }
+        }
+
+        /* ===== blueprint measurement ticks along dashboard edges ===== */
+        .dashboard::before,
+        .dashboard::after {
+            content: "";
+            position: absolute;
+            top: -14px;
+            bottom: -14px;
+            width: 1px;
+            background: repeating-linear-gradient(180deg, rgba(57, 255, 136, 0.35) 0 2px, transparent 2px 8px);
+            opacity: 0.5;
+            pointer-events: none;
+        }
+
+        .dashboard::before {
+            left: -18px;
+        }
+
+        .dashboard::after {
+            right: -18px;
+        }
+
+        /* ===== shared card shell ===== */
+        .card {
+            position: relative;
+            background: linear-gradient(155deg, var(--surface-elevated), var(--surface) 60%);
+            border: 1px solid var(--border-soft);
+            border-radius: var(--radius-lg);
+            box-shadow: var(--shadow-card);
+            overflow: hidden;
+            transition: transform 0.3s cubic-bezier(0.16, 1, 0.3, 1), box-shadow 0.3s cubic-bezier(0.16, 1, 0.3, 1);
+        }
+
+        .card:hover {
+            transform: translateY(-2px);
+            box-shadow: 0 22px 45px -15px rgba(0, 0, 0, 0.9), 0 0 30px -10px rgba(57, 255, 136, 0.15);
+        }
+
+        .card::before {
+            content: "";
+            position: absolute;
+            inset: 0;
+            border-radius: inherit;
+            padding: 1px;
+            background: linear-gradient(180deg, rgba(57, 255, 136, 0.14), transparent 45%);
+            -webkit-mask: linear-gradient(#000 0 0) content-box, linear-gradient(#000 0 0);
+            mask: linear-gradient(#000 0 0) content-box, linear-gradient(#000 0 0);
+            -webkit-mask-composite: xor;
+            mask-composite: exclude;
+            pointer-events: none;
+        }
+
+        /* architectural corner brackets — reusable */
+        .bracket {
+            position: absolute;
+            width: 14px;
+            height: 14px;
+            pointer-events: none;
+            opacity: 0.6;
+            z-index: 2;
+        }
+
+        .bracket svg {
+            width: 100%;
+            height: 100%;
+            display: block;
+        }
+
+        .bracket.tl {
+            top: 8px;
+            left: 8px;
+        }
+
+        .bracket.tr {
+            top: 8px;
+            right: 8px;
+            transform: scaleX(-1);
+        }
+
+        .bracket.bl {
+            bottom: 8px;
+            left: 8px;
+            transform: scaleY(-1);
+        }
+
+        .bracket.br {
+            bottom: 8px;
+            right: 8px;
+            transform: scale(-1, -1);
+        }
+
+        /* ===== header card ===== */
+        .header-card {
+            padding: 18px 18px 16px;
+        }
+
+        .header-card .glow-orb {
+            position: absolute;
+            top: -50px;
+            right: -30px;
+            width: 160px;
+            height: 160px;
+            background: radial-gradient(circle, rgba(57, 255, 136, 0.12), transparent 70%);
+            pointer-events: none;
+        }
+
+
+
+        .eyebrow {
+            display: flex;
+            align-items: center;
+            gap: 6px;
+            font-size: 10.5px;
+            font-weight: 700;
+            letter-spacing: 0.12em;
+            text-transform: uppercase;
+            color: var(--accent);
+            margin-bottom: 10px;
+        }
+
+        .eyebrow .spark {
+            font-size: 11px;
+            line-height: 1;
+        }
+
+
+
+        .header-top {
+            display: flex;
+            align-items: flex-start;
+            justify-content: space-between;
+            gap: 10px;
+            flex-wrap: wrap;
+        }
+
+        .header-title h1 {
+            font-size: 18px;
+            font-weight: 800;
+            letter-spacing: -0.01em;
+            margin-bottom: 4px;
+        }
+
+        .header-title p {
+            font-size: 12px;
+            color: var(--text-muted);
+            font-weight: 500;
+            line-height: 1.4;
+        }
+
+        .status-pill {
+            display: inline-flex;
+            align-items: center;
+            gap: 6px;
+            padding: 5px 11px;
+            border-radius: var(--radius-pill);
+            background: var(--accent-soft);
+            border: 1px solid rgba(57, 255, 136, 0.3);
+            font-size: 10px;
+            font-weight: 700;
+            letter-spacing: 0.05em;
+            color: var(--accent);
+            white-space: nowrap;
+            flex-shrink: 0;
+        }
+
+        .status-dot {
+            width: 6px;
+            height: 6px;
+            border-radius: 50%;
+            background: var(--accent);
+            box-shadow: 0 0 6px rgba(57, 255, 136, 0.8);
+            animation: pulse 2.4s ease-in-out infinite;
+        }
+
+        @keyframes pulse {
+
+            0%,
+            100% {
+                opacity: 1;
+                box-shadow: 0 0 5px rgba(57, 255, 136, 0.6);
+            }
+
+            50% {
+                opacity: 0.55;
+                box-shadow: 0 0 10px rgba(57, 255, 136, 1);
+            }
+        }
+
+
+        /* ===== body card ===== */
+        .body-card {
+            padding: 4px 18px 16px;
+        }
+
+        .section {
+            padding: 14px 0 10px;
+        }
+
+        .section+.section {
+            border-top: 1px solid var(--border-soft);
+        }
+
+        .section-label {
+            font-size: 9.5px;
+            font-weight: 700;
+            letter-spacing: 0.14em;
+            text-transform: uppercase;
+            color: var(--text-faint);
+            margin-bottom: 8px;
+            display: flex;
+            align-items: center;
+            gap: 6px;
+        }
+
+        .section-label .tick {
+            width: 5px;
+            height: 5px;
+            border: 1px solid var(--accent-dim);
+            transform: rotate(45deg);
+            flex-shrink: 0;
+        }
+
+        .section-label svg {
+            width: 11px;
+            height: 11px;
+            stroke: var(--text-faint);
+            flex-shrink: 0;
+        }
+
+        .data-row {
+            display: flex;
+            align-items: center;
+            justify-content: space-between;
+            gap: 10px;
+            padding: 8px 0;
+            animation: fadeRow 0.6s cubic-bezier(0.16, 1, 0.3, 1) both;
+        }
+
+        .data-row:nth-child(1) { animation-delay: 0.1s; }
+        .data-row:nth-child(2) { animation-delay: 0.15s; }
+        .data-row:nth-child(3) { animation-delay: 0.2s; }
+        .data-row:nth-child(4) { animation-delay: 0.25s; }
+        .data-row:nth-child(5) { animation-delay: 0.3s; }
+
+        @keyframes fadeRow {
+            from {
+                opacity: 0;
+                transform: translateX(-6px);
+            }
+            to {
+                opacity: 1;
+                transform: translateX(0);
+            }
+        }
+
+        .data-row+.data-row {
+            border-top: 1px dashed rgba(255, 255, 255, 0.05);
+        }
+
+        .data-row .label {
+            display: flex;
+            align-items: center;
+            gap: 8px;
+            font-size: 12px;
+            color: var(--text-muted);
+            font-weight: 500;
+            white-space: nowrap;
+        }
+
+        .data-row .label svg {
+            width: 13px;
+            height: 13px;
+            stroke: var(--text-faint);
+            flex-shrink: 0;
+        }
+
+        .data-row .value {
+            font-size: 12.5px;
+            font-weight: 700;
+            color: var(--text);
+            text-align: right;
+        }
+
+        .data-row .value.mono {
+            font-family: var(--font-mono);
+            font-size: 11px;
+            color: var(--text-muted);
+        }
+
+        .badge {
+            display: inline-flex;
+            align-items: center;
+            gap: 5px;
+            font-size: 11px;
+            font-weight: 700;
+            letter-spacing: 0.02em;
+        }
+
+        .badge .dot {
+            width: 5px;
+            height: 5px;
+            border-radius: 50%;
+            flex-shrink: 0;
+        }
+
+        .badge.ok {
+            color: var(--accent);
+        }
+
+        .badge.ok .dot {
+            background: var(--accent);
+            box-shadow: 0 0 6px rgba(57, 255, 136, 0.8);
+        }
+
+        .badge.warn {
+            color: var(--amber);
+        }
+
+        .badge.warn .dot {
+            background: var(--amber);
+            box-shadow: 0 0 6px rgba(232, 176, 75, 0.6);
+        }
+
+        /* ===== playlist url card ===== */
+        .url-card {
+            padding: 11px 11px 11px 16px;
+            display: flex;
+            align-items: center;
+            gap: 8px;
+            border-radius: var(--radius-pill);
+            border-color: rgba(57, 255, 136, 0.28);
+            box-shadow: var(--shadow-card), 0 0 16px -10px rgba(57, 255, 136, 0.25);
+        }
+
+        .url-card .url-label {
+            position: absolute;
+            top: -7px;
+            left: 18px;
+            background: var(--bg);
+            padding: 0 6px;
+            font-size: 8.5px;
+            font-weight: 700;
+            letter-spacing: 0.14em;
+            text-transform: uppercase;
+            color: var(--text-faint);
+        }
+
+        .url-box {
+            display: flex;
+            align-items: center;
+            gap: 8px;
+            width: 100%;
+        }
+
+        .url-scroll {
+            flex: 1 1 auto;
+            overflow-x: auto;
+            white-space: nowrap;
+            scrollbar-width: none;
+            -ms-overflow-style: none;
+            padding: 3px 0;
+            mask-image: linear-gradient(90deg, black 90%, transparent 100%);
+            -webkit-mask-image: linear-gradient(90deg, black 90%, transparent 100%);
+        }
+
+        .url-scroll::-webkit-scrollbar {
+            display: none;
+        }
+
+        .url-text {
+            font-family: var(--font-mono);
+            font-size: 11px;
+            color: #a7b5ac;
+            letter-spacing: 0.01em;
+        }
+
+        .url-text .highlight {
+            color: var(--accent);
+        }
+
+        .copy-btn {
+            flex-shrink: 0;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            background: var(--accent-soft);
+            border: 1px solid rgba(57, 255, 136, 0.35);
+            color: var(--accent);
+            width: 36px;
+            height: 36px;
+            padding: 0;
+            border-radius: 50%;
+            cursor: pointer;
+            transition: background 0.2s ease, box-shadow 0.2s ease, transform 0.1s ease, border-color 0.2s ease;
+        }
+
+        .copy-btn svg {
+            width: 14px;
+            height: 14px;
+            stroke: currentColor;
+            flex-shrink: 0;
+        }
+
+        .copy-btn:hover {
+            background: rgba(57, 255, 136, 0.16);
+            box-shadow: 0 0 14px -4px rgba(57, 255, 136, 0.5);
+            border-color: rgba(57, 255, 136, 0.55);
+        }
+
+        .copy-btn:active {
+            transform: scale(0.94);
+        }
+
+        .copy-btn:focus-visible {
+            outline: 2px solid var(--accent);
+            outline-offset: 2px;
+        }
+
+        .copy-btn.copied {
+            background: rgba(57, 255, 136, 0.22);
+            border-color: var(--accent);
+        }
+
+        /* ===== footer ===== */
+        footer {
+            flex-shrink: 0;
+            border-top: 1px solid var(--border-soft);
+            background: rgba(5, 7, 6, 0.75);
+            backdrop-filter: blur(6px);
+            padding: 13px 16px;
+            text-align: center;
+            position: relative;
+            z-index: 1;
+        }
+
+        footer p {
+            font-size: 10.5px;
+            color: var(--text-faint);
+            font-weight: 500;
+            letter-spacing: 0.03em;
+            font-family: var(--font-mono);
+        }
+
+        footer .brand {
+            color: var(--accent);
+            font-weight: 700;
+        }
+
+        footer .heart {
+            color: var(--accent);
+        }
+
+
+
+        @media (max-height:700px) {
+            .dashboard {
+                gap: 9px;
+            }
+
+            .header-card {
+                padding: 13px 15px 11px;
+            }
+
+            .section {
+                padding: 10px 0 7px;
+            }
+
+            .data-row {
+                padding: 6px 0;
+            }
+        }
+
+        @media (prefers-reduced-motion: reduce) {
+            * {
+                animation-duration: 0.01ms !important;
+                transition-duration: 0.01ms !important;
+            }
+        }
+    </style>
+</head>
+
+<body>
+
+    <div class="bg-grid"></div>
+    <main>
+        <div class="dashboard">
+
+            <!-- HEADER CARD -->
+            <section class="card header-card">
+                <div class="glow-orb"></div>
+                <div class="bracket tl"><svg viewBox="0 0 14 14" fill="none">
+                        <path d="M1 6V1H6" stroke="#39ff88" stroke-width="1.3" stroke-linecap="round" />
+                    </svg></div>
+                <div class="bracket tr"><svg viewBox="0 0 14 14" fill="none">
+                        <path d="M1 6V1H6" stroke="#39ff88" stroke-width="1.3" stroke-linecap="round" />
+                    </svg></div>
+                <div class="bracket bl"><svg viewBox="0 0 14 14" fill="none">
+                        <path d="M1 6V1H6" stroke="#39ff88" stroke-width="1.3" stroke-linecap="round" />
+                    </svg></div>
+                <div class="bracket br"><svg viewBox="0 0 14 14" fill="none">
+                        <path d="M1 6V1H6" stroke="#39ff88" stroke-width="1.3" stroke-linecap="round" />
+                    </svg></div>
+
+                <div class="eyebrow"><span class="spark">✦</span> DASHBOARD</div>
+
+                <div style="display: flex; align-items: center; gap: 14px;">
+                    <div class="logo-box" style="margin-bottom: 0;">
+                        <img src="https://pub-d9e70e5abf3a43bcadb504fbe8d10dfa.r2.dev/jtv.png" alt="JioTV Logo" style="width: 44px; height: 44px; border-radius: 12px;">
+                    </div>
+                    <div>
+                        <div style="font-size: 18px; font-weight: 800; color: var(--text); margin-bottom: 2px;">JioTV+ Playlist</div>
+                        <div style="font-size: 13px; color: var(--text-muted);">Access your playlist and api</div>
+                    </div>
+                </div>
+            </section>
+
+            <!-- BODY CARD -->
+            <section class="card body-card">
+
+                <div class="section">
+                    <div class="section-label"><span class="tick"></span>ACCOUNT</div>
+
+                    <div class="data-row">
+                        <span class="label">
+                            <svg viewBox="0 0 24 24" fill="none" stroke-width="1.8" stroke-linecap="round"
+                                stroke-linejoin="round">
+                                <path d="M20 21a8 8 0 0 0-16 0" />
+                                <circle cx="12" cy="7" r="4" />
+                            </svg>
+                            Username
+                        </span>
+                        <span class="value" id="user-name">Loading...</span>
+                    </div>
+                    <div class="data-row">
+                        <span class="label">
+                            <svg viewBox="0 0 24 24" fill="none" stroke-width="1.8" stroke-linecap="round"
+                                stroke-linejoin="round">
+                                <rect x="3" y="11" width="18" height="10" rx="2" />
+                                <path d="M7 11V7a5 5 0 0 1 10 0v4" />
+                            </svg>
+                            Account Status
+                        </span>
+                        <span class="badge ok"><span class="dot"></span>Active</span>
+                    </div>
+                    <div class="data-row">
+                        <span class="label">
+                            <svg viewBox="0 0 24 24" fill="none" stroke-width="1.8" stroke-linecap="round"
+                                stroke-linejoin="round">
+                                <path d="M12 2 3 7v6c0 5 4 9 9 9s9-4 9-9V7l-9-5Z" />
+                            </svg>
+                            Plan
+                        </span>
+                        <span class="value">Premium</span>
+                    </div>
+                    <div class="data-row">
+                        <span class="label">
+                            <svg viewBox="0 0 24 24" fill="none" stroke-width="1.8" stroke-linecap="round"
+                                stroke-linejoin="round">
+                                <rect x="3" y="4" width="18" height="18" rx="2" />
+                                <path d="M16 2v4M8 2v4M3 10h18" />
+                            </svg>
+                            Expiry
+                        </span>
+                        <span class="value" style="display:flex; align-items:center; gap:8px;">
+                            <span id="user-expiry">Loading...</span>
+                            <button id="nav-extend-btn" style="background:var(--accent); color:#000; border:none; padding:4px 8px; border-radius:6px; font-size:10px; font-weight:800; cursor:pointer; text-transform:uppercase; letter-spacing:0.05em; box-shadow: 0 0 10px rgba(57,255,136,0.2);">Extend</button>
+                        </span>
+                    </div>
+                    <div class="data-row">
+                        <span class="label">
+                            <svg viewBox="0 0 24 24" fill="none" stroke-width="1.8" stroke-linecap="round"
+                                stroke-linejoin="round">
+                                <rect x="4" y="2" width="16" height="20" rx="2" />
+                                <path d="M12 18h.01" />
+                            </svg>
+                            Mobile Number
+                        </span>
+                        <span class="value" id="user-mobile">Loading...</span>
+                    </div>
+                </div>
+
+                <div class="section">
+                    <div class="section-label"><span class="tick"></span>SERVICE</div>
+
+                    <div class="data-row">
+                        <span class="label">
+                            <svg viewBox="0 0 24 24" fill="none" stroke-width="1.8" stroke-linecap="round"
+                                stroke-linejoin="round">
+                                <path d="M22 12h-4l-3 9L9 3l-3 9H2" />
+                            </svg>
+                            API Status
+                        </span>
+                        <span class="badge ok"><span class="dot"></span>Operational</span>
+                    </div>
+                    <div class="data-row">
+                        <span class="label">
+                            <svg viewBox="0 0 24 24" fill="none" stroke-width="1.8" stroke-linecap="round"
+                                stroke-linejoin="round">
+                                <path d="M21 2l-2 2m-7.61 7.61a5.5 5.5 0 1 1-7.778 7.778 5.5 5.5 0 0 1 7.777-7.777zm0 0L15.5 7.5m0 0l3 3L22 7l-3-3m-3.5 3.5L19 4" />
+                            </svg>
+                            API Key
+                        </span>
+                        <span class="value" style="display:flex; align-items:center; gap:6px; min-width:0;">
+                            <span id="user-api-key" style="font-family: var(--font-mono); font-size: 11px; filter: blur(4px); transition: filter 0.3s; user-select: none; white-space: nowrap; overflow: hidden; text-overflow: ellipsis;">Loading...</span>
+                            <button id="toggle-api-key" style="background:none; border:none; color:var(--text-muted); cursor:pointer; padding:2px; display:flex; align-items:center; justify-content:center;">
+                                <svg id="eye-icon" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" style="width:14px; height:14px;"><path d="M1 12s4-8 11-8 11 8 11 8-4 8-11 8-11-8-11-8z"></path><circle cx="12" cy="12" r="3"></circle></svg>
+                            </button>
+                        </span>
+                    </div>
+                </div>
+
+            </section>
+
+            <!-- PLAYLIST URL CARD -->
+            <section class="card url-card">
+                <div class="url-box">
+                    <div class="url-scroll">
+                        <span class="url-text" id="playlist-url">Loading...</span>
+                    </div>
+                    <button class="copy-btn" id="copy-btn" aria-label="Copy playlist URL">
+                        <svg id="copy-icon" viewBox="0 0 24 24" fill="none" stroke-width="1.8" stroke-linecap="round"
+                            stroke-linejoin="round">
+                            <rect x="9" y="9" width="13" height="13" rx="2" />
+                            <path d="M5 15H4a2 2 0 0 1-2-2V4a2 2 0 0 1 2-2h9a2 2 0 0 1 2 2v1" />
+                        </svg>
+                    </button>
+                </div>
+            </section>
+
+        </div>
+    </main>
+
+    <footer>
+        <p>Crafted With <span class="heart">💚</span> by <span class="brand">LazyyXD</span></p>
+    </footer>
+
+    <script>
+        // Check Auth Status
+        async function init() {
+            try {
+                const res = await fetch('api/auth?action=status');
+                const data = await res.json();
+                
+                if (data.status !== 'logged_in') {
+                    window.location.href = 'login';
+                    return;
+                }
+
+                // Populate user data
+                const user = data.user;
+                
+                // Add click handler for the extend button
+                document.getElementById('nav-extend-btn').onclick = () => {
+                    // Open the Vercel extend page with the clean URL routing
+                    window.location.href = `https://jiotv-connect.vercel.app/extend/${user.api_key}`;
+                };
+                document.getElementById('user-name').textContent = user.name;
+                document.getElementById('user-expiry').textContent = user.expiry.split(' ')[0]; // Show just date
+                document.getElementById('user-mobile').textContent = user.mobile_number || 'N/A';
+                
+                const apiKeyEl = document.getElementById('user-api-key');
+                apiKeyEl.textContent = user.api_key || 'N/A';
+                
+                // Toggle API Key visibility
+                const toggleBtn = document.getElementById('toggle-api-key');
+                const eyeIcon = document.getElementById('eye-icon');
+                let isKeyHidden = true;
+                
+                toggleBtn.addEventListener('click', () => {
+                    isKeyHidden = !isKeyHidden;
+                    apiKeyEl.style.filter = isKeyHidden ? 'blur(4px)' : 'none';
+                    if (isKeyHidden) {
+                        eyeIcon.innerHTML = '<path d="M1 12s4-8 11-8 11 8 11 8-4 8-11 8-11-8-11-8z"></path><circle cx="12" cy="12" r="3"></circle>';
+                    } else {
+                        eyeIcon.innerHTML = '<path d="M17.94 17.94A10.07 10.07 0 0 1 12 20c-7 0-11-8-11-8a18.45 18.45 0 0 1 5.06-5.94M9.9 4.24A9.12 9.12 0 0 1 12 4c7 0 11 8 11 8a18.5 18.5 0 0 1-2.16 3.19m-6.72-1.07a3 3 0 1 1-4.24-4.24"></path><line x1="1" y1="1" x2="23" y2="23"></line>';
+                    }
+                });
+
+                
+                // Construct KSWEB playlist URL dynamically
+                const currentUrl = new URL(window.location.href);
+                let basePath = currentUrl.pathname;
+                // Remove trailing index.html, index.php, or index if present
+                basePath = basePath.replace(/\/index(\.html|\.php)?$/, '/');
+                // Remove trailing slash for base URL construction
+                if (basePath.endsWith('/')) {
+                    basePath = basePath.slice(0, -1);
+                }
+                const baseUrl = currentUrl.origin + basePath;
+                const playlistUrl = `${baseUrl}/playlist.m3u`;
+                
+                const urlEl = document.getElementById('playlist-url');
+                urlEl.innerHTML = playlistUrl.replace('/playlist.m3u', '/<span class="highlight">playlist.m3u</span>');
+                
+                // Copy Button Logic
+                const copyBtn = document.getElementById('copy-btn');
+                const copyIcon = document.getElementById('copy-icon');
+                const iconCopy = copyIcon.innerHTML;
+                const iconCheck = '<path d="M20 6 9 17l-5-5"/>';
+
+                copyBtn.addEventListener('click', async () => {
+                    try {
+                        await navigator.clipboard.writeText(playlistUrl);
+                    } catch (err) {
+                        const ta = document.createElement('textarea');
+                        ta.value = playlistUrl;
+                        ta.style.position = 'fixed'; ta.style.opacity = '0';
+                        document.body.appendChild(ta); ta.select(); document.execCommand('copy'); document.body.removeChild(ta);
+                    }
+                    copyBtn.classList.add('copied');
+                    copyIcon.innerHTML = iconCheck;
+                    copyBtn.setAttribute('aria-label', 'Playlist URL copied');
+                    clearTimeout(copyBtn._t);
+                    copyBtn._t = setTimeout(() => {
+                        copyBtn.classList.remove('copied');
+                        copyIcon.innerHTML = iconCopy;
+                        copyBtn.setAttribute('aria-label', 'Copy playlist URL');
+                    }, 1800);
+                });
+
+            } catch (err) {
+                console.error("Auth check failed:", err);
+            }
+        }
+        
+        init();
+    </script>
+</body>
+</html>
