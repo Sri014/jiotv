@@ -11,6 +11,12 @@
   [![Platform](https://img.shields.io/badge/Platform-XAMPP%20%7C%20KSWEB%20%7C%20Linux%20%7C%20Android-blue?style=for-the-badge)](https://github.com)
   [![Crafted With](https://img.shields.io/badge/Crafted%20With-%F0%9F%92%9A%20by%20LazyyXD-00E599?style=for-the-badge)](https://github.com)
 
+  <br />
+
+  <a href="https://github.com/lazyop/JioTV-Localhost/archive/refs/heads/main.zip">
+    <img src="https://img.shields.io/badge/📥_Download_ZIP-Latest_Release-00E599?style=for-the-badge&logoColor=white" alt="Download ZIP" height="38" />
+  </a>
+
 </div>
 
 ---
