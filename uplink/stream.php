@@ -354,7 +354,7 @@ function getClientIp(): string
 
         $ip = trim(explode(',', $value)[0]);
 
-        if (filter_var($ip, FILTER_VALIDATE_IP, FILTER_FLAG_NO_PRIV_RANGE | FILTER_FLAG_NO_RES_RANGE)) {
+        if (filter_var($ip, FILTER_VALIDATE_IP)) {
             return $ip;
         }
     }
@@ -362,13 +362,29 @@ function getClientIp(): string
     return '';
 }
 
-function isIndianIp(string $ip): bool
+function isPrivateOrLocalIp(string $ip): bool
 {
-    if ($ip === '') {
+    if ($ip === '' || $ip === '127.0.0.1' || $ip === '::1' || $ip === 'localhost') {
         return true;
     }
 
-    $curl = curl_init('https://ip-api.com/json/' . rawurlencode($ip) . '?fields=countryCode');
+    if (filter_var($ip, FILTER_VALIDATE_IP, FILTER_FLAG_NO_PRIV_RANGE | FILTER_FLAG_NO_RES_RANGE) === false) {
+        return true;
+    }
+
+    return preg_match(
+        '/^(127\.|10\.|172\.(1[6-9]|2[0-9]|3[01])\.|192\.168\.|192\.0\.0\.|192\.0\.2\.|198\.51\.100\.|203\.0\.113\.|169\.254\.|100\.(6[4-9]|[7-9][0-9]|1[01][0-9]|12[0-7])\.|0\.|fc[0-9a-f]{2}:|fd[0-9a-f]{2}:|fe80:)/i',
+        $ip
+    ) === 1;
+}
+
+function isIndianIp(string $ip): bool
+{
+    if ($ip === '' || isPrivateOrLocalIp($ip)) {
+        return true;
+    }
+
+    $curl = curl_init('https://ip-api.com/json/' . rawurlencode($ip) . '?fields=status,countryCode,message');
 
     if ($curl === false) {
         return true;
@@ -397,7 +413,15 @@ function isIndianIp(string $ip): bool
         return true;
     }
 
-    return is_array($data) && ($data['countryCode'] ?? '') === 'IN';
+    if (!is_array($data)) {
+        return true;
+    }
+
+    if (($data['status'] ?? '') === 'fail') {
+        return true;
+    }
+
+    return ($data['countryCode'] ?? '') === 'IN';
 }
 
 if ($_SERVER['REQUEST_METHOD'] === 'OPTIONS') {
